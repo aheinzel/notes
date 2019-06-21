@@ -1,0 +1,1 @@
+sudo mount -t drvfs -ouid=1000,gid=1000 U: /mnt/mnt_point
