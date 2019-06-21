@@ -1,0 +1,5 @@
+#list persistent network connections
+net use
+
+#delete persistent network connection (note: can still reconnect without credentials until server has invalidated session)
+net use \\UNC-path /delete
