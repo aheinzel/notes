@@ -3,6 +3,9 @@ http://emea.support.illumina.com/downloads/illumina-adapter-sequences-document-1
 http://bioinformatics.cvr.ac.uk/blog/illumina-adapter-and-primer-sequences/
 https://wikis.utexas.edu/display/GSAF/Illumina+-+all+flavors
 
+#adapters easy copy and paste
+https://gist.github.com/photocyte/3edd9401d0b13476e60f8b104c2575f8
+
 #seqs for trimming
 http://emea.support.illumina.com/bulletins/2016/12/what-sequences-do-i-use-for-adapter-trimming.html
 
