@@ -3,6 +3,9 @@ http://emea.support.illumina.com/downloads/illumina-adapter-sequences-document-1
 http://bioinformatics.cvr.ac.uk/blog/illumina-adapter-and-primer-sequences/
 https://wikis.utexas.edu/display/GSAF/Illumina+-+all+flavors
 
+#seqs for trimming
+http://emea.support.illumina.com/bulletins/2016/12/what-sequences-do-i-use-for-adapter-trimming.html
+
 
 #miseq primer compatability
 http://emea.support.illumina.com/bulletins/2016/06/sequencing-primer-compatibility-with-illumina-library-prep-kits-recommended-for-the-miseq-sequencing-platform.html?langsel=/at/
