@@ -1,1 +1,3 @@
 sudo mount -t drvfs -ouid=1000,gid=1000 U: /mnt/mnt_point
+
+#https://blogs.msdn.microsoft.com/wsl/2016/06/15/wsl-file-system-support/
