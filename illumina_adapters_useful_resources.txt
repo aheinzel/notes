@@ -1,4 +1,5 @@
 #adapter primer sequences
+http://emea.support.illumina.com/downloads/illumina-adapter-sequences-document-1000000002694.html
 http://bioinformatics.cvr.ac.uk/blog/illumina-adapter-and-primer-sequences/
 https://wikis.utexas.edu/display/GSAF/Illumina+-+all+flavors
 
