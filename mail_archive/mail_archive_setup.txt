@@ -1,0 +1,217 @@
+############################################################################################
+###                                                                                      ###
+### notes for installing a simple imap server for mirroring / archiving imap mailboxes   ###
+###    dovecot (imapd) and roundcube as frontend                                         ###
+###    imapsync for mirroring imap mailboxes                                             ###
+###    Ubuntu 18.04.3 LTS                                                                ###
+###    imapsync 1.945                                                                    ###
+###                                                                                      ###
+############################################################################################
+
+
+### conventions #################
+### #text is a line comment     #
+### >>path refers to a file     #
+################################# 
+
+
+#### prepare host: set host-name and FQDN ####
+>>/etc/hostname
+#enter server hostname (without domain)
+#e.g. srvr01
+
+>>/etc/hosts
+#update 127.0.1.1 first entry is fqdn, second is hostname only
+#e.g. 127.0.1.1 srvr01.me.local srvr01
+
+
+#### install mail-server (postfix, dovecot and roundcube webmail) ####
+sudo apt-get update 
+sudo apt-get -y install \
+   dovecot-imapd \
+   postfix \
+   roundcube \
+   roundcube-sqlite3 \
+   mailutils
+
+#postfix setup answers:
+# - internet site
+# - system mail name: e.g. me.local
+# - configure roundcube with dbcommon
+
+
+
+#### configure dovecot for use with virtual users and allow plain-text auth ####
+#create system user and group for handling virtual mail users
+sudo groupadd -g 5000 vmail
+sudo useradd -u 5000 -g vmail -s /usr/bin/nologin -d /var/vmail -m vmail
+
+
+# use Maildir format
+>>/etc/dovecot/conf.d/10-mail.conf
+#modify
+mail_location = maildir:~/Maildir 
+
+
+# turn off SSL
+>>/etc/dovecot/conf.d/10-ssl.conf
+#modify
+ssl = no
+
+
+>>/etc/dovecot/conf.d/10-auth.conf
+#modify
+disable_plaintext_auth = no
+
+
+# use dovecot password file for mail user management
+>>/etc/dovecot/conf.d/10-auth.conf
+#uncomment
+!include auth-passwdfile.conf.ext
+#comment out other authentication backends
+
+
+# configure password file backend
+>>/etc/dovecot/conf.d/auth-passwdfile.conf.ext
+#replace with
+passdb {
+  driver = passwd-file
+  args = scheme=CRYPT /etc/dovecot/users
+}
+
+userdb {
+  driver = passwd-file
+  args = /etc/dovecot/users
+  default_fields = uid=vmail gid=vmail home=/var/vmail/%u                                                                                                                                                     
+  # Default fields that can be overridden by passwd-file
+  #default_fields = quota_rule=*:storage=1G
+
+  # Override fields from passwd-file
+  #override_fields = home=/var/virtual/%u
+}
+
+
+# create virtual mail users
+>>/etc/dovecot/users
+#add users - format is
+user_name:{PLAIN}pass::::::
+#user_name without domain!
+#use >>doveadm pw -s MD5-CRYPTM<< to generate crypted passwords that can be used instead of plain text passwords
+
+
+
+### configure postfix ###
+# add dovecot-lda to postfix
+>>/etc/postfix/master.cf
+#add service - TAKE CARE no quotes
+dovecot   unix  -       n       n       -       -       pipe
+  flags=DRhu user=vmail:vmail argv=/usr/lib/dovecot/dovecot-lda -f ${sender} -d ${user}
+
+
+# use dovecot-lda to deliver mails for me.local on the local machine
+>>/etc/postfix/main.cf
+#remove your domain (e.g. me.local) from mydestination
+#add the following
+dovecot_destination_recipient_limit = 1
+virtual_mailbox_domains = me.local
+virtual_transport = dovecot
+
+
+
+### configure and enable roundcube ###
+# enable roundcube
+>>/etc/apache2/conf-available/roundcube.conf
+#uncomment line
+Alias /roundcube /var/lib/roundcube 
+
+
+# set default mail server and mail domain
+>>/etc/roundcube/config.inc.php
+#modify
+$config['default_host'] = 'localhost';
+#add
+$config['mail_domain'] = 'me.local';
+
+
+# restart dovecot and postfix
+service dovecot restart
+service postfixrestart
+
+
+#send initial mail to each virtual mail user - will force mailbox creation
+mail -s first user_name@me.local
+
+
+
+### how to add new users ###
+# create new user entry in >>/etc/dovecot/users
+# send initial mail to force mailbox creation
+
+
+
+#### install imapsync ####
+# install dependencies
+sudo apt-get update
+sudo apt-get -y install  \
+libauthen-ntlm-perl     \
+libclass-load-perl      \
+libcrypt-ssleay-perl    \
+libdata-uniqid-perl     \
+libdigest-hmac-perl     \
+libdist-checkconflicts-perl \
+libfile-copy-recursive-perl \
+libio-compress-perl     \
+libio-socket-inet6-perl \
+libio-socket-ssl-perl   \
+libio-tee-perl          \
+libmail-imapclient-perl \
+libmodule-scandeps-perl \
+libnet-dbus-perl        \
+libnet-ssleay-perl      \
+libpar-packer-perl      \
+libreadonly-perl        \
+libregexp-common-perl   \
+libsys-meminfo-perl     \
+libterm-readkey-perl    \
+libtest-fatal-perl      \
+libtest-mock-guard-perl \
+libtest-mockobject-perl \
+libtest-pod-perl        \
+libtest-requires-perl   \
+libtest-simple-perl     \
+libunicode-string-perl  \
+liburi-perl             \
+libtest-nowarnings-perl \
+libtest-deep-perl       \
+libtest-warn-perl       \
+make                    \
+cpanminus               \
+libfile-tail-perl
+
+
+# download imapsync from github
+sudo su
+cd /usr/local/bin
+wget "https://raw.githubusercontent.com/imapsync/imapsync/master/imapsync"
+chmod 755 imapsync
+exit
+
+# add user for running imapsync
+sudo groupadd imapsync
+sudo useradd -g imapsync -s /bin/bash -m imapsync
+
+# copy sync_mailboxes.sh to /home/imapsync and make it executable
+
+# create sync config in /home/imapsync/imapsync_tasks for each mailbox you want to sync
+mkdir /home/imapsync/imapsync_tasks
+# for each mailbox three files are needed 
+# (1) main configuration file (ending with .conf) with 1 line (tab seperated) source_host source_user_name source_pw_file target_user_name target_pw_file
+#     path to pw_files must be relative to the config file - name of pw_files must not end with .conf
+# (2) source_pw_file: holds only the password for authenticating on the source server
+# (3) target_pw_file: holds only the password for authenticating on the target server
+
+
+
+### secure the installation ###
+# block access to smtp and imap
+# in case you plan on accessing roundcube via an insecure connection (e.g. not your private LAN) add SSL
