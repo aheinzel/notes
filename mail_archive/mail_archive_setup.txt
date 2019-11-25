@@ -115,6 +115,8 @@ dovecot   unix  -       n       n       -       -       pipe
 dovecot_destination_recipient_limit = 1
 virtual_mailbox_domains = me.local
 virtual_transport = dovecot
+#modify
+myorigin = $myhostname
 
 
 
